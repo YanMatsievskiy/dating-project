@@ -1,0 +1,38 @@
+# docker-compose.yml
+
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dating_app_db}
+      POSTGRES_USER: ${POSTGRES_USER:-dating_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dating_pass}
+    ports:
+      - "5432:5432" # Для доступа к БД извне (опционально)
+
+  web:
+    build: .
+    command: bash -c "python manage.py migrate && python manage.py load_mock_data && python manage.py runserver 0.0.0.0:8000"
+    # Если load_mock_data не реализован, используйте:
+    # command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=1
+      - POSTGRES_DB=${POSTGRES_DB:-dating_app_db}
+      - POSTGRES_USER=${POSTGRES_USER:-dating_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-dating_pass}
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - SECRET_KEY=${SECRET_KEY:-your-fallback-secret-key-change-me}
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
